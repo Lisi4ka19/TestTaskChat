@@ -8,7 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Repository
 public class MessageDAOImp implements MessageDAO{
@@ -26,25 +28,32 @@ public class MessageDAOImp implements MessageDAO{
                 "(senderId = :senderId or senderId = :recipientId) " +
                 "and (recipientId =  :senderId or recipientId = :recipientId)";
 
-        if(dateBegin==null&&dateEnd==null){
-            query = session.createQuery(testQuery, Message.class);
-        }else if(dateBegin!=null&&dateEnd==null){
-            testQuery +=" and date >= :dateBegin";
-            query = session.createQuery(testQuery, Message.class);
-            query.setParameter("dateBegin", dateBegin);
-        }else if(dateBegin==null&&dateEnd!=null){
-            testQuery =" and date<= :dateEnd";
-            query = session.createQuery(testQuery, Message.class);
-            query.setParameter("dateEnd", dateEnd);
-        }else if(dateBegin!=null&&dateEnd!=null) {
-            testQuery = " and date >= :dateBegin and date<= :dateEnd";
-            query = session.createQuery(testQuery, Message.class);
-            query.setParameter("dateBegin", dateBegin);
-            query.setParameter("dateEnd", dateEnd);
+        HashMap<String, Date> parameters = new HashMap<>();
 
+
+        if (dateBegin != null && dateEnd == null) {
+            testQuery += " and date >= :dateBegin";
+
+            parameters.put("dateBegin", dateBegin);
+
+        } else if (dateBegin == null && dateEnd != null) {
+            testQuery += " and date<= :dateEnd";
+
+            parameters.put("dateEnd", dateEnd);
+        } else if (dateBegin != null && dateEnd != null) {
+            testQuery += " and date >= :dateBegin and date<= :dateEnd";
+
+            parameters.put("dateBegin", dateBegin);
+            parameters.put("dateEnd", dateEnd);
         }
+
+        query = session.createQuery(testQuery, Message.class);
         query.setParameter("senderId", senderId);
         query.setParameter("recipientId", recipientId);
+
+        for (Map.Entry<String, Date> entry: parameters.entrySet()) {
+            query.setParameter(entry.getKey(), entry.getValue());
+        }
 
         List<Message> allMessages = query.getResultList();
 
